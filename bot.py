@@ -84,3 +84,5 @@ class TelegramBot(BotHandler, Bottle):
 if __name__ == "__main__":
 	app = TelegramBot()
 	app.run(host="localhost", port=8080, debug=True)
+
+application = TelegramBot()
