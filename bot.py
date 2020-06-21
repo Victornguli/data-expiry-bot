@@ -51,7 +51,8 @@ class TelegramBot(BotHandler, Bottle):
 
 	@staticmethod
 	def hello_world():
-		return response("Hello, World!")
+		response.content_type = 'text/html; charset=UTF8'
+		return u"<h1>Hello, World</h1>"
 
 	@staticmethod
 	def transform_message(text):
