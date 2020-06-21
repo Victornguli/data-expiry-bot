@@ -1,9 +1,11 @@
 import requests
 import os
+import logging
 from bottle import Bottle, request as bottle_request, response
 
-BOT_TOKEN = os.environ.get('token')
+BOT_TOKEN = os.getenv('token')
 
+logging.basicConfig(level = logging.INFO)
 
 class BotHandler:
 	BOT_URL = None
@@ -25,7 +27,8 @@ class BotHandler:
 	def send_message(self, data):
 		"""Sends a message response to the requesting chat_id"""
 		url = f"{self.BOT_URL}sendMessage"
-		requests.post(url, json = data)
+		res = requests.post(url, json = data)
+		logging.info(f"Request to {url} returned status {res.status_code}")
 
 	def send_photo(self, data):
 		url = f"{self.BOT_URL}sendPhoto"
