@@ -1,0 +1,2 @@
+africastalking==1.2.0
+bottle==0.12.18
