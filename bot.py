@@ -47,6 +47,11 @@ class TelegramBot(BotHandler, Bottle):
 	def __init__(self, *args, **kwargs):
 		super().__init__()
 		self.route('/', callback = self.post_handler, method = "POST")
+		self.route('/hello', callback = self.hello_world, method = "GET")
+
+	@staticmethod
+	def hello_world():
+		return response("Hello, World!")
 
 	@staticmethod
 	def transform_message(text):
