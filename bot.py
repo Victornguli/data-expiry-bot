@@ -1,7 +1,11 @@
 import requests
 import os
 import logging
+import json
+from datetime import datetime
+import calendar
 from bottle import Bottle, request as bottle_request, response
+from db import create_connection, insert
 
 BOT_TOKEN = os.getenv('token')
 
@@ -33,6 +37,7 @@ class TelegramBot(BotHandler, Bottle):
 		super().__init__()
 		self.route('/', callback = self.post_handler, method = "POST")
 		self.route('/test', callback = self.hello_world, method = "GET")
+		self.PREVIOUS_COMMAND = ""
 
 	@staticmethod
 	def hello_world():
@@ -47,14 +52,47 @@ class TelegramBot(BotHandler, Bottle):
 		self.send_message(json_response)
 
 	def settings_command(self, chat_id):
-		keyboard = ["set purchase date", "turn off notifications"]
-		url = f"{self.BOT_URL}replyKeyboardMarkup?keyboard={keyboard}&resize_keyboard=true&on_time_keyboard=true"
+		reply_keyboard_markup = {
+			"keyboard": [["set purchase date"], ["turn off notifications"]],
+			"one_time_keyboard": True
+		}
+		url = f"{self.BOT_URL}sendMessage"
 		data = {
 			"chat_id": chat_id,
 			"text": "Select one of the following options",
+			"reply_markup": json.dumps(reply_keyboard_markup)
 		}
 		res = requests.post(url, data)
 		logging.info(f"Request to {url} returned status {res.status_code}")
+		if res.status_code != 200:
+			logging.error(f"Request to {url} returned {res.text}")
+
+	def set_purchase_date(self, time_str, chat_id):
+		"""Sets new purchase datetime"""
+		data = {}
+		try:
+			now = datetime.now()
+			time = datetime.strptime(time_str, "%H:%M")
+			purchase_date = datetime(now.year, now.month, now.day, time.hour, time.minute, 0, 0)
+		except Exception as ex:
+			logging.error(f"Failed to parse time string {time_str}")
+			logging.error(str(ex))
+		else:
+			data = {
+				"chat_id": chat_id,
+				"text": f"Successfully saved new purchase {purchase_date}"
+			}
+			conn = create_connection()
+			insert(conn, [purchase_date])
+			conn.close()
+		if not data:
+			data = {
+				"chat_id": chat_id,
+				"text": f"Failed to parse {time_str}"
+			}
+		self.PREVIOUS_COMMAND = ""
+		self.send_message(data)
+		# conn = create_connection()
 
 	def post_handler(self):
 		data = bottle_request.json
@@ -65,12 +103,20 @@ class TelegramBot(BotHandler, Bottle):
 			command = data.get("message", {}).get("text", "")
 			if command == "/start":
 				self.start_command(chat_id)
+			elif command == "/settings":
+				self.settings_command(chat_id)
 		else:
-			data = {
-				"chat_id": chat_id,
-				"text": "Unrecognized chatter buddy.\nRespond with /settings."
-			}
-			self.send_message(data)
+			message = data.get("message", {}).get("text", "")
+			if message == "set purchase date":
+				self.PREVIOUS_COMMAND = "set_purchase_date"
+			elif self.PREVIOUS_COMMAND == "set_purchase_date":
+				self.set_purchase_date(message, chat_id)
+			else:
+				data = {
+					"chat_id": chat_id,
+					"text": "Unrecognized chatter buddy.\nRespond with /settings."
+				}
+				self.send_message(data)
 
 		return response
 
