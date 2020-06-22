@@ -15,7 +15,7 @@ logging.basicConfig(level=logging.INFO)
 def create_connection():
 	conn = None
 	init = True
-	db_path = os.path.join(os.path.abspath(__file__), "db.sqlite3")
+	db_path = os.path.join(os.path.dirname(__file__), "db.sqlite3")
 	if os.path.exists(db_path):
 		init = False
 	try:
@@ -49,33 +49,37 @@ def insert(conn, data):
 	conn.commit()
 
 
-# def send_test():
-# 	bh = BotHandler()
-# 	url = bh.BOT_URL
-# 	payload = {
-# 		"chat_id": 887933915,
-# 		"text": "Bundles will expire soon"
-# 	}
-# 	requests.post(url, payload)
+def get_latest_record(conn):
+	cursor = conn.execute(
+		"SELECT * FROM notifications ORDER BY id DESC LIMIT 1;")
+	row = [x for x in cursor][-1]
+	return row
+	# latest_date = datetime.strptime(row[1], "%Y-%m-%d %H:%M:%S")
+	# return latest_date
+	# for row in cursor:
+	# 	print("id = ", row[0])
+	# 	print("purchase_date = ", datetime.strptime(row[1], "%Y-%m-%d %H:%M:%S"))
+	# 	print("notifications_on = ", row[2])
+	# 	print("grace_period_hours = ", row[3])
+	# 	print("grace_period_minutes = ", row[4])
+	# 	print("sms_notifications = ", row[5])
+	# 	previous_date = datetime.strptime(row[1], "%Y-%m-%d %H:%M:%S")
+	# 	expiry_date = previous_date + timedelta(minutes = 1)
+	# 	exec_time = datetime.strftime(expiry_date, "%H:%M")
+	# 	print(expiry_date)
 
-# if __name__ == "script":
-# 	conn = create_connection()
-# 	# create_table(conn)
-# 	# insert(conn, [datetime.now()])
-# 	cursor = conn.execute(
-# 		"SELECT * FROM notifications ORDER BY id ASC LIMIT 1;")
-#
-# 	for row in cursor:
-# 		print("id = ", row[0])
-# 		print("purchase_date = ", datetime.strptime(row[1], "%Y-%m-%d %H:%M:%S.%f"))
-# 		print("notifications_on = ", row[2])
-# 		print("grace_period_hours = ", row[3])
-# 		print("grace_period_minutes = ", row[4])
-# 		print("sms_notifications = ", row[5])
-# 		previous_date = datetime.strptime(row[1], "%Y-%m-%d %H:%M:%S.%f")
-# 		expiry_date = previous_date + timedelta(minutes = 1)
-# 		# expiry_date = expiry_date - timedelta(hours = row[3], minutes = row[4])
-# 		exec_time = datetime.strftime(expiry_date, "%H:%M")
-# 		# insert(conn, [expiry_date])
-# 		print(expiry_date)
-# 	conn.close()
+
+def calculate_expiry_date(latest_date, hours = 0, minutes = 0):
+	previous_date = datetime.strptime(latest_date, "%Y-%m-%d %H:%M:%S")
+	expiry_date = previous_date + timedelta(hours = 24) - timedelta(hours = hours, minutes = minutes)
+	return expiry_date
+
+
+# if __name__ == "__main__":
+# 	connection = create_connection()
+# 	row = get_latest_record(connection)
+# 	date = datetime.strptime(row[1], "%Y-%m-%d %H:%M:%S")
+# 	expiry = calculate_expiry_date(row[1], row[2], row[3])
+# 	print(date)
+# 	print(expiry)
+# 	connection.close()
