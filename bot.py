@@ -48,13 +48,13 @@ class TelegramBot(BotHandler, Bottle):
 
 	def settings_command(self, chat_id):
 		keyboard = ["set purchase date", "turn off notifications"]
-		reply_markup =
 		url = f"{self.BOT_URL}replyKeyboardMarkup?keyboard={keyboard}&resize_keyboard=true&on_time_keyboard=true"
-		res = {
+		data = {
 			"chat_id": chat_id,
 			"text": "Select one of the following options",
-			"reply_markup":
 		}
+		res = requests.post(url, data)
+		logging.info(f"Request to {url} returned status {res.status_code}")
 
 	def post_handler(self):
 		data = bottle_request.json
