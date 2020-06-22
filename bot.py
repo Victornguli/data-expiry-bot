@@ -47,7 +47,7 @@ class TelegramBot(BotHandler, Bottle):
 	def start_command(self, chat_id):
 		json_response = {
 			"chat_id": chat_id,
-			"text": "Welcome to Data expiry bot.\nTo setup data and get instructions reply with /settings"
+			"text": "Welcome to data expiry notification bot.\nTo setup data and get instructions reply with /settings"
 		}
 		self.send_message(json_response)
 
@@ -121,8 +121,14 @@ class TelegramBot(BotHandler, Bottle):
 		return response
 
 
-if __name__ == "__main__":
-	app = TelegramBot()
-	app.run(host="localhost", port=8080, debug=True)
+"""
+Uncomment to run on localhost or on WSGIRefServer. 
+Application is exported to enable it to run on a mod_wsgi server instead.
+"""
 
-# application = TelegramBot()
+# if __name__ == "__main__":
+# 	app = TelegramBot()
+# 	app.run(host="localhost", port=8080, debug=True)
+
+
+application = TelegramBot()
