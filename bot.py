@@ -46,7 +46,7 @@ class TelegramBot(BotHandler, Bottle):
 	def start_command(self, chat_id):
 		json_response = {
 			"chat_id": chat_id,
-			"text": "Welcome to data expiry notification bot.\nTo setup data and get instructions reply with /settings"
+			"text": "Welcome to data expiry notification bot.\nTo setup data and get instructions reply with /options"
 		}
 		self.send_message(json_response)
 
@@ -83,7 +83,7 @@ class TelegramBot(BotHandler, Bottle):
 			}
 			try:
 				conn = create_connection()
-				insert(conn, [purchase_date])
+				insert(conn, purchase_date = purchase_date)
 				conn.close()
 			except Exception as ex:
 				logging.error(str(ex))
@@ -105,7 +105,7 @@ class TelegramBot(BotHandler, Bottle):
 			command = data.get("message", {}).get("text", "")
 			if command == "/start":
 				self.start_command(chat_id)
-			elif command == "/settings":
+			elif command == "/options":
 				self.settings_command(chat_id)
 		else:
 			message = data.get("message", {}).get("text", "")
