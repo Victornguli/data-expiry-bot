@@ -3,13 +3,12 @@ import os
 import logging
 import json
 from datetime import datetime
-import calendar
 from bottle import Bottle, request as bottle_request, response
-from db import create_connection, insert
+from .db import create_connection, insert
 
 BOT_TOKEN = os.getenv('token')
-
-logging.basicConfig(level = logging.INFO)
+log_path = os.getenv("LOG_PATH")
+logging.basicConfig(level = logging.INFO, filename=os.path.join(log_path, "logs.log"))
 
 
 class BotHandler:
@@ -82,9 +81,12 @@ class TelegramBot(BotHandler, Bottle):
 				"chat_id": chat_id,
 				"text": f"Successfully saved new purchase {purchase_date}"
 			}
-			conn = create_connection()
-			insert(conn, [purchase_date])
-			conn.close()
+			try:
+				conn = create_connection()
+				insert(conn, [purchase_date])
+				conn.close()
+			except Exception as ex:
+				logging.error(str(ex))
 		if not data:
 			data = {
 				"chat_id": chat_id,
@@ -114,7 +116,7 @@ class TelegramBot(BotHandler, Bottle):
 			else:
 				data = {
 					"chat_id": chat_id,
-					"text": "Unrecognized chatter buddy.\nRespond with /settings."
+					"text": "Unrecognized chatter.\nRespond with /settings."
 				}
 				self.send_message(data)
 
@@ -131,4 +133,6 @@ Application is exported to enable it to run on a mod_wsgi server instead.
 # 	app.run(host="localhost", port=8080, debug=True)
 
 
-application = TelegramBot()
+def app():
+	return TelegramBot()
+

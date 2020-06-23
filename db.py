@@ -1,25 +1,21 @@
 import sqlite3
 import logging
-import schedule
-import time
 import os
-import threading
-import requests
 from datetime import datetime, timedelta
-# from bot import BotHandler
 
-
-logging.basicConfig(level=logging.INFO)
+log_path = os.getenv("LOG_PATH")
+logging.basicConfig(level = logging.INFO, filename=os.path.join(log_path, "logs.log"))
 
 
 def create_connection():
 	conn = None
 	init = True
-	db_path = os.path.join(os.path.dirname(__file__), "db.sqlite3")
+	db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "db.sqlite3")
+	logging.info(f"Creating db at {db_path}")
 	if os.path.exists(db_path):
 		init = False
 	try:
-		conn = sqlite3.connect("db.sqlite3")
+		conn = sqlite3.connect(db_path)
 		if init:
 			create_table(conn)
 	except Exception as e:
