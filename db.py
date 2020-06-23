@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 
 log_path = os.getenv("LOG_PATH")
 logging.basicConfig(level = logging.INFO, filename = os.path.join(log_path, "logs.log"))
+# logging.basicConfig(level = logging.INFO)
 
 
 def create_connection():
@@ -71,12 +72,12 @@ def get_latest_record(conn):
 	return rows
 
 
-def get_notification_status(conn):
+def get_status(conn):
 	rows = get_latest_record(conn)
 	if rows:
 		obj = rows[0]
-		return obj[2]
-	return 0
+		return obj[1], obj[2]
+	return None, 0
 
 
 def calculate_expiry_date(latest_date, hours = 0, minutes = 0):

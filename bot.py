@@ -4,11 +4,12 @@ import logging
 import json
 from datetime import datetime
 from bottle import Bottle, request as bottle_request, response
-from .db import create_connection, insert
+from db import create_connection, insert, get_status
 
 BOT_TOKEN = os.getenv('token')
 log_path = os.getenv("LOG_PATH")
 logging.basicConfig(level = logging.INFO, filename=os.path.join(log_path, "logs.log"))
+# logging.basicConfig(level = logging.INFO)
 
 
 class BotHandler:
@@ -49,16 +50,20 @@ class TelegramBot(BotHandler, Bottle):
 			"text": "Welcome to data expiry notification bot.\nTo setup data and get instructions reply with /options"
 		}
 		self.send_message(json_response)
+		self.settings_command(chat_id)
 
-	def settings_command(self, chat_id):
+	def settings_command(self, chat_id, text = "Use the following commands to interact with me"):
+		conn = create_connection()
+		status = get_status(conn)
+		notifications = "turnoff" if status[1] else "turnon"
 		reply_keyboard_markup = {
-			"keyboard": [["set purchase date"], ["turn off notifications"]],
+			"keyboard": [["set purchase date"], [f"{notifications} notifications"], ["/status"]],
 			"one_time_keyboard": True
 		}
 		url = f"{self.BOT_URL}sendMessage"
 		data = {
 			"chat_id": chat_id,
-			"text": "Select one of the following options",
+			"text": text,
 			"reply_markup": json.dumps(reply_keyboard_markup)
 		}
 		res = requests.post(url, data)
@@ -77,24 +82,57 @@ class TelegramBot(BotHandler, Bottle):
 			logging.error(f"Failed to parse time string {time_str}")
 			logging.error(str(ex))
 		else:
-			data = {
-				"chat_id": chat_id,
-				"text": f"Successfully saved new purchase {purchase_date}"
-			}
 			try:
 				conn = create_connection()
 				insert(conn, purchase_date = purchase_date)
 				conn.close()
 			except Exception as ex:
 				logging.error(str(ex))
+				data = {
+					"chat_id": chat_id,
+					"text": f"Failed to set new purchase date: {purchase_date}.\
+					\nUse the command /options to select the option again."
+				}
+			else:
+				data = {
+					"chat_id": chat_id,
+					"text": f"Successfully set new purchase date: {purchase_date}"
+				}
 		if not data:
 			data = {
 				"chat_id": chat_id,
-				"text": f"Failed to parse {time_str}"
+				"text": f"Failed to parse {time_str}.\nUse the command /options to select the option again."
 			}
 		self.PREVIOUS_COMMAND = ""
 		self.send_message(data)
 		# conn = create_connection()
+
+	def status_command(self, chat_id):
+		conn = create_connection()
+		status = get_status(conn)
+		previous_date = f"{status[0]}" if status[0] else "N/A"
+		notification_status = "ON" if status[1] else "OFF"
+		if status[0]:
+			res = f"Previous purchase date is: {previous_date}.\nNotifications are turned {notification_status}"
+		else:
+			res = f"No purchase date was found.\nFollow commands at /options to set a new one."
+		self.send_message({"chat_id": chat_id, "text": res})
+		conn.close()
+
+	def toggle_notifications(self, chat_id, status = 0):
+		conn = create_connection()
+		data = {"chat_id": chat_id}
+		notification_status = "ON" if status else "OFF"
+		try:
+			insert(conn, notifications_on = status)
+			data["text"] = f"Successfully changed notification status to {notification_status}"
+		except Exception as ex:
+			logging.info("Failed to change notification status")
+			logging.info(str(ex))
+			data["text"] = f"Failed to change notification status to {notification_status}"
+		self.send_message(data)
+		self.settings_command(chat_id, text = "More operations?")
+		conn.close()
 
 	def post_handler(self):
 		data = bottle_request.json
@@ -107,8 +145,17 @@ class TelegramBot(BotHandler, Bottle):
 				self.start_command(chat_id)
 			elif command == "/options":
 				self.settings_command(chat_id)
+			elif command == "/status":
+				self.status_command(chat_id)
 		else:
 			message = data.get("message", {}).get("text", "")
+			if message == "turnoff notifications":
+				self.toggle_notifications(chat_id, status = 0)
+				return response
+			if message == "turnon notifications":
+				self.toggle_notifications(chat_id, status = 1)
+				return response
+
 			if message == "set purchase date":
 				self.PREVIOUS_COMMAND = "set_purchase_date"
 			elif self.PREVIOUS_COMMAND == "set_purchase_date":
@@ -116,7 +163,7 @@ class TelegramBot(BotHandler, Bottle):
 			else:
 				data = {
 					"chat_id": chat_id,
-					"text": "Unrecognized chatter.\nRespond with /settings."
+					"text": "Unrecognized chatter.\nRespond with /options."
 				}
 				self.send_message(data)
 
