@@ -12,12 +12,12 @@ from cron import update_call_time
 
 log_path = os.getenv("LOG_PATH")
 logging.basicConfig(level = logging.INFO, filename = os.path.join(log_path, "logs.log"))
+BOT_URL = os.getenv("token")
 
 
 def send_message(previous, exp):
 	text = f"Your data bundle will be expiring soon. Previous purchase date was {previous}.\nNext expiry date is {exp}"
-	bot_url = "https://api.telegram.org/bot1179386780:AAGc5uaxmaqZi2ji-9JcmwlZanWdUw7Vi5c/"
-	url = f"{bot_url}sendMessage?chat_id={887933915}&text={text}"
+	url = f"{BOT_URL}sendMessage?chat_id={887933915}&text={text}"
 	r = requests.post(url)
 	logging.info(f"Request to {url} returned {r.status_code}")
 
@@ -33,7 +33,7 @@ if __name__ == "__main__":
 		now = datetime.now()
 		previous_date = datetime.strptime(previous_date, "%Y-%m-%d %H:%M:%S")
 		diff = now - previous_date
-		# Time elapsed between purchase time and now is greater than/equal to 24hrs - extra hours
+		# Time elapsed between purchase time and now should be greater than/equal to (24hrs - extra hours)
 		if not(divmod(diff.total_seconds(), 3600)[0] < (24 - (entry[3] + 1))):
 			logging.info("Setting new purchase date")
 			insert(conn, purchase_date = expiry)
@@ -42,7 +42,7 @@ if __name__ == "__main__":
 		try:
 			hour = expiry.hour
 			minute = expiry.minute
-			logging.info(f"Call me at {hour}:{minute}")
+			# logging.info(f"Notifier set to run at {hour}:{minute}")
 			update_call_time(hour, minute)
 		except Exception as ex:
 			logging.error("Failed to update call time")
