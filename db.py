@@ -5,7 +5,6 @@ from datetime import datetime, timedelta
 
 log_path = os.getenv("LOG_PATH")
 logging.basicConfig(level = logging.INFO, filename = os.path.join(log_path, "logs.log"))
-# logging.basicConfig(level = logging.INFO)
 
 
 def create_connection():

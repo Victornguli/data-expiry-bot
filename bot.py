@@ -4,12 +4,11 @@ import logging
 import json
 from datetime import datetime
 from bottle import Bottle, request as bottle_request, response
-from db import create_connection, insert, get_status
+from .db import create_connection, insert, get_status
 
 BOT_TOKEN = os.getenv('token')
 log_path = os.getenv("LOG_PATH")
 logging.basicConfig(level = logging.INFO, filename=os.path.join(log_path, "logs.log"))
-# logging.basicConfig(level = logging.INFO)
 
 
 class BotHandler:
@@ -74,14 +73,19 @@ class TelegramBot(BotHandler, Bottle):
 	def set_purchase_date(self, time_str, chat_id):
 		"""Sets new purchase datetime"""
 		data = {}
+		purchase_date = None
 		try:
 			now = datetime.now()
 			time = datetime.strptime(time_str, "%H:%M")
 			purchase_date = datetime(now.year, now.month, now.day, time.hour, time.minute, 0, 0)
 		except Exception as ex:
+			try:
+				purchase_date = datetime.strptime(time_str, "%Y-%m-%d %H:%M:%S")
+			except Exception:
+				pass
 			logging.error(f"Failed to parse time string {time_str}")
 			logging.error(str(ex))
-		else:
+		if purchase_date:
 			try:
 				conn = create_connection()
 				insert(conn, purchase_date = purchase_date)
