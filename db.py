@@ -83,23 +83,3 @@ def calculate_expiry_date(latest_date, hours = 0, minutes = 0):
 	previous_date = datetime.strptime(latest_date, "%Y-%m-%d %H:%M:%S")
 	expiry_date = previous_date + timedelta(hours = 24) - timedelta(hours = hours, minutes = minutes)
 	return expiry_date
-
-
-# if __name__ == "__main__":
-# 	connection = create_connection()
-# 	row = get_latest_record(connection)
-# 	print(row)
-# 	if row:
-# 		row = row[0]
-# 		date = datetime.strptime(row[1], "%Y-%m-%d %H:%M:%S")
-# 		print(date)
-# 		expiry = calculate_expiry_date(row[1], row[2], row[3])
-# 		print(expiry)
-# 		insert(connection, purchase_date = expiry)
-# 		row = get_latest_record(connection)
-# 	date = datetime.strptime("2020-06-25 10:14:00", "%Y-%m-%d %H:%M:%S")
-# 	insert(connection, purchase_date = date, notifications_on = 0)
-# 	print(f"New purchase date is {date}")
-# 	row = get_latest_record(connection)
-# 	print(row)
-# 	connection.close()
