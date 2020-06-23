@@ -1,3 +1,5 @@
-africastalking==1.2.0
+# africastalking==1.2.0
 bottle==0.12.18
-python-dotenv
+python-crontab==2.5.1
+python-dotenv==0.13.0
+requests==2.24.0
