@@ -4,14 +4,14 @@ import os
 from datetime import datetime, timedelta
 
 log_path = os.getenv("LOG_PATH")
-logging.basicConfig(level = logging.INFO, filename=os.path.join(log_path, "logs.log"))
+logging.basicConfig(level = logging.INFO, filename = os.path.join(log_path, "logs.log"))
 
 
 def create_connection():
 	conn = None
 	init = True
 	db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "db.sqlite3")
-	logging.info(f"Creating db at {db_path}")
+	logging.info(f"Connecting to db at {db_path}")
 	if os.path.exists(db_path):
 		init = False
 	try:
@@ -37,32 +37,46 @@ def create_table(conn):
 	logging.info("Table created successfully")
 
 
-def insert(conn, data):
-	sqlite_insert_with_param = """INSERT INTO 'notifications'
-		('purchase_date') 
-		VALUES (?);"""
-	conn.execute(sqlite_insert_with_param, tuple(data))
-	conn.commit()
+def insert(conn, **kwargs):
+	latest_record = get_latest_record(conn)
+	if latest_record:
+		latest_record = latest_record[0]
+		logging.info(f"Updating entry with id {latest_record[0]}")
+		# Update instead of insert..
+		query = ""
+		data = []
+		for _ in range(len(kwargs)):
+			obj = kwargs.popitem()
+			query += obj[0] + " = ? "
+			data.append(obj[1])
+			if kwargs:
+				query += ", "
+		param_query = f"""UPDATE notifications SET {query} WHERE id = ?"""
+		data.append(latest_record[0])
+		conn.execute(param_query, tuple(data))
+		conn.commit()
+	elif kwargs.get("purchase_date", ""):
+		logging.info(f"Creating new entry with date {kwargs.get('purchase_date')}")
+		data = [kwargs.get("purchase_date")]
+		sqlite_insert_with_param = """INSERT INTO 'notifications'
+		('purchase_date') VALUES (?);"""
+		conn.execute(sqlite_insert_with_param, tuple(data))
+		conn.commit()
 
 
 def get_latest_record(conn):
 	cursor = conn.execute(
 		"SELECT * FROM notifications ORDER BY id DESC LIMIT 1;")
-	row = [x for x in cursor][-1]
-	return row
-	# latest_date = datetime.strptime(row[1], "%Y-%m-%d %H:%M:%S")
-	# return latest_date
-	# for row in cursor:
-	# 	print("id = ", row[0])
-	# 	print("purchase_date = ", datetime.strptime(row[1], "%Y-%m-%d %H:%M:%S"))
-	# 	print("notifications_on = ", row[2])
-	# 	print("grace_period_hours = ", row[3])
-	# 	print("grace_period_minutes = ", row[4])
-	# 	print("sms_notifications = ", row[5])
-	# 	previous_date = datetime.strptime(row[1], "%Y-%m-%d %H:%M:%S")
-	# 	expiry_date = previous_date + timedelta(minutes = 1)
-	# 	exec_time = datetime.strftime(expiry_date, "%H:%M")
-	# 	print(expiry_date)
+	rows = [x for x in cursor]
+	return rows
+
+
+def get_notification_status(conn):
+	rows = get_latest_record(conn)
+	if rows:
+		obj = rows[0]
+		return obj[2]
+	return 0
 
 
 def calculate_expiry_date(latest_date, hours = 0, minutes = 0):
@@ -74,8 +88,18 @@ def calculate_expiry_date(latest_date, hours = 0, minutes = 0):
 # if __name__ == "__main__":
 # 	connection = create_connection()
 # 	row = get_latest_record(connection)
-# 	date = datetime.strptime(row[1], "%Y-%m-%d %H:%M:%S")
-# 	expiry = calculate_expiry_date(row[1], row[2], row[3])
-# 	print(date)
-# 	print(expiry)
+# 	print(row)
+# 	if row:
+# 		row = row[0]
+# 		date = datetime.strptime(row[1], "%Y-%m-%d %H:%M:%S")
+# 		print(date)
+# 		expiry = calculate_expiry_date(row[1], row[2], row[3])
+# 		print(expiry)
+# 		insert(connection, purchase_date = expiry)
+# 		row = get_latest_record(connection)
+# 	date = datetime.strptime("2020-06-25 10:14:00", "%Y-%m-%d %H:%M:%S")
+# 	insert(connection, purchase_date = date, notifications_on = 0)
+# 	print(f"New purchase date is {date}")
+# 	row = get_latest_record(connection)
+# 	print(row)
 # 	connection.close()
