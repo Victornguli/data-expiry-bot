@@ -4,7 +4,8 @@ import logging
 import json
 from datetime import datetime
 from bottle import Bottle, request as bottle_request, response
-from .db import create_connection, insert, get_status
+from notify.db import create_connection, insert, get_status
+from notify.scripts.cron import update_call_time
 
 BOT_TOKEN = os.getenv('token')
 log_path = os.getenv("LOG_PATH")
@@ -56,7 +57,9 @@ class TelegramBot(BotHandler, Bottle):
 		status = get_status(conn)
 		notifications = "turnoff" if status[1] else "turnon"
 		reply_keyboard_markup = {
-			"keyboard": [["set purchase date"], [f"{notifications} notifications"], ["/status"]],
+			"keyboard": [
+				["set purchase date"], [f"{notifications} notifications"], ["/status"],
+				["set notification time"]],
 			"one_time_keyboard": True
 		}
 		url = f"{self.BOT_URL}sendMessage"
@@ -111,6 +114,26 @@ class TelegramBot(BotHandler, Bottle):
 		self.send_message(data)
 		# conn = create_connection()
 
+	def set_notification_time(self, time, chat_id):
+		"""Sets new notification time, especially if purchase date has been updated"""
+		data = {
+			"chat_id": chat_id,
+			"text": 'Failed to update notification script call time'
+		}
+		try:
+			time = datetime.strptime(time, "%H:%M")
+			update_call_time(time.hour, time.minute)
+		except ValueError as e:
+			logging.error(f'Failed to parse the time string {time}')
+			logging.error(str(e))
+			data['text'] = f'Failed to parse time string {time}'
+		except Exception as ex:
+			logging.error(f'Failed to update notification script call time')
+			logging.error(str(ex))
+
+		self.PREVIOUS_COMMAND = ""
+		self.send_message(data)
+
 	def status_command(self, chat_id):
 		conn = create_connection()
 		status = get_status(conn)
@@ -135,7 +158,7 @@ class TelegramBot(BotHandler, Bottle):
 			logging.info(str(ex))
 			data["text"] = f"Failed to change notification status to {notification_status}"
 		self.send_message(data)
-		self.settings_command(chat_id, text = "More operations?")
+		self.settings_command(chat_id, text = "Use options in main menu for more commands")
 		conn.close()
 
 	def post_handler(self):
@@ -155,13 +178,14 @@ class TelegramBot(BotHandler, Bottle):
 			message = data.get("message", {}).get("text", "")
 			if message == "turnoff notifications":
 				self.toggle_notifications(chat_id, status = 0)
-				return response
-			if message == "turnon notifications":
+			elif message == "turnon notifications":
 				self.toggle_notifications(chat_id, status = 1)
-				return response
-
-			if message == "set purchase date":
+			elif message == "set purchase date":
 				self.PREVIOUS_COMMAND = "set_purchase_date"
+			elif message == "set notification time":
+				self.PREVIOUS_COMMAND = "set_notification_time"
+			elif self.PREVIOUS_COMMAND == "set_notification_time":
+				self.set_notification_time(message, chat_id)
 			elif self.PREVIOUS_COMMAND == "set_purchase_date":
 				self.set_purchase_date(message, chat_id)
 			else:
@@ -179,9 +203,9 @@ Uncomment to run on localhost or on WSGIRefServer.
 Application is exported to enable it to run on a mod_wsgi server instead.
 """
 
-# if __name__ == "__main__":
-# 	app = TelegramBot()
-# 	app.run(host="localhost", port=8080, debug=True)
+if __name__ == "__main__":
+	app = TelegramBot()
+	app.run(host="localhost", port=8080, debug=True)
 
 
 def app():

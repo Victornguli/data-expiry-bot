@@ -5,12 +5,13 @@ from datetime import datetime, timedelta
 
 log_path = os.getenv("LOG_PATH")
 logging.basicConfig(level = logging.INFO, filename = os.path.join(log_path, "logs.log"))
+# logging.basicConfig(level = logging.INFO)
 
 
 def create_connection():
 	conn = None
 	init = True
-	db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "db.sqlite3")
+	db_path = os.path.join(os.path.dirname(os.path.dirname((os.path.abspath(__file__)))), "db.sqlite3")
 	logging.info(f"Connecting to db at {db_path}")
 	if os.path.exists(db_path):
 		init = False
@@ -20,14 +21,14 @@ def create_connection():
 			create_table(conn)
 	except Exception as e:
 		logging.error("Could not create/connect to the db")
-		print(str(e))
+		logging.error(str(e))
 	finally:
 		return conn
 
 
 def create_table(conn):
 	conn.execute('''
-	CREATE TABLE notifications 
+	CREATE TABLE IF NOT EXISTS notifications 
 		(id INTEGER PRIMARY KEY AUTOINCREMENT,
 		purchase_date TIMESTAMP NOT NULL,
 		notifications_on INTEGER DEFAULT 0,
@@ -83,3 +84,23 @@ def calculate_expiry_date(latest_date, hours = 0, minutes = 0):
 	previous_date = datetime.strptime(latest_date, "%Y-%m-%d %H:%M:%S")
 	expiry_date = previous_date + timedelta(hours = 24) - timedelta(hours = hours, minutes = minutes)
 	return expiry_date
+
+
+# if __name__ == "__main__":
+# 	connection = create_connection()
+# 	row = get_latest_record(connection)
+# 	print(row)
+# 	if row:
+# 		row = row[0]
+# 		date = datetime.strptime(row[1], "%Y-%m-%d %H:%M:%S")
+# 		print(date)
+# 		expiry = calculate_expiry_date(row[1], row[2], row[3])
+# 		print(expiry)
+# 		insert(connection, purchase_date = expiry)
+# 		row = get_latest_record(connection)
+# 	date = datetime.strptime("2020-06-25 10:14:00", "%Y-%m-%d %H:%M:%S")
+# 	insert(connection, purchase_date = date, notifications_on = 0)
+# 	print(f"New purchase date is {date}")
+# 	row = get_latest_record(connection)
+# 	print(row)
+# 	connection.close()
