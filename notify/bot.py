@@ -5,7 +5,7 @@ import json
 from datetime import datetime
 from bottle import Bottle, request as bottle_request, response
 from notify.db import create_connection, insert, get_status
-from notify.scripts.cron import update_call_time
+from notify.scripts.cron import update_call_time, get_call_details
 
 BOT_TOKEN = os.getenv('token')
 log_path = os.getenv("LOG_PATH")
@@ -140,8 +140,13 @@ class TelegramBot(BotHandler, Bottle):
 		status = get_status(conn)
 		previous_date = f"{status[0]}" if status[0] else "N/A"
 		notification_status = "ON" if status[1] else "OFF"
+		call_time = get_call_details()
+		now = datetime.now()
+		notification_time = datetime.strptime(f"{call_time['hour']}:{call_time['minute']}", "%H:%M")
+		notification_time = notification_time.strftime("%H:%M")
 		if status[0]:
-			res = f"Previous purchase date is: {previous_date}.\nNotifications are turned {notification_status}"
+			res = f"Previous purchase date is: {previous_date}.\nNotifications are turned {notification_status}."
+			res += f"\nNotification time is set to: {notification_time}"
 		else:
 			res = f"No purchase date was found.\nFollow commands at /options to set a new one."
 		self.send_message({"chat_id": chat_id, "text": res})

@@ -30,3 +30,14 @@ def update_call_time(hour = 0, minute = 0):
 		job.hour.on(hour)
 		job.minute.on(minute)
 	cron.write()
+
+
+def get_call_details():
+	"""Retrieves call time details for the notification script"""
+	cron = CronTab(user = True)
+	jobs = cron.find_comment("notification_script")
+	res = {'hour': 0, 'minute': 0}
+	for job in jobs:
+		res['hour'] = job.hour
+		res['minute'] = job.minute
+	return res
