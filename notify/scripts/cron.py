@@ -8,7 +8,7 @@ def init():
 	"""
 	Initializes a crontab entry for notify.py(Runs every midnight)
 	"""
-	cron = CronTab(user = "root")
+	cron = CronTab(user = True)
 	job = cron.new(command=f"python3 {os.path.join(ROOT, 'notify.py')}", comment = "notification_script")
 	job.hour.on(0)
 	job.minute.on(0)
@@ -24,7 +24,7 @@ def update_call_time(hour = 0, minute = 0):
 	:param minute: The minute value to be set
 	:type minute: int
 	"""
-	cron = CronTab(user = "root")
+	cron = CronTab(user = True)
 	jobs = cron.find_comment("notification_script")
 	for job in jobs:
 		job.hour.on(hour)

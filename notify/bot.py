@@ -123,6 +123,7 @@ class TelegramBot(BotHandler, Bottle):
 		try:
 			time = datetime.strptime(time, "%H:%M")
 			update_call_time(time.hour, time.minute)
+			data['text'] = f'Successfully updated notification time to {time.hour}:{time.minute}'
 		except ValueError as e:
 			logging.error(f'Failed to parse the time string {time}')
 			logging.error(str(e))
@@ -163,7 +164,7 @@ class TelegramBot(BotHandler, Bottle):
 
 	def post_handler(self):
 		data = bottle_request.json
-		print(data)
+		# print(data)
 		chat_id = self.get_chat_id(data)
 		entities = data.get("message", {}).get("entities", "")
 		if entities and entities[0]["type"] == "bot_command":
@@ -203,9 +204,9 @@ Uncomment to run on localhost or on WSGIRefServer.
 Application is exported to enable it to run on a mod_wsgi server instead.
 """
 
-if __name__ == "__main__":
-	app = TelegramBot()
-	app.run(host="localhost", port=8080, debug=True)
+# if __name__ == "__main__":
+# 	app = TelegramBot()
+# 	app.run(host="localhost", port=8080, debug=True)
 
 
 def app():
