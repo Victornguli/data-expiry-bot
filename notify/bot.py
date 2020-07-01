@@ -141,9 +141,7 @@ class TelegramBot(BotHandler, Bottle):
 		previous_date = f"{status[0]}" if status[0] else "N/A"
 		notification_status = "ON" if status[1] else "OFF"
 		call_time = get_call_details()
-		now = datetime.now()
-		notification_time = datetime.strptime(f"{call_time['hour']}:{call_time['minute']}", "%H:%M")
-		notification_time = notification_time.strftime("%H:%M")
+		notification_time = datetime.strptime(f"{call_time['hour']}:{call_time['minute']}", "%H:%M").strftime("%H:%M")
 		if status[0]:
 			res = f"Previous purchase date is: {previous_date}.\nNotifications are turned {notification_status}."
 			res += f"\nNotification time is set to: {notification_time}"
