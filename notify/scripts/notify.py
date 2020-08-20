@@ -7,12 +7,15 @@ from dotenv import load_dotenv
 # Load env since this is run outside wsgi environment
 root = os.path.dirname(os.path.abspath(__file__))
 load_dotenv(os.path.join(os.path.dirname(root), ".env"))
+#from notify.db import create_connection, get_latest_record, calculate_expiry_date, insert
+#from .cron import update_call_time
 from notify.db import create_connection, get_latest_record, calculate_expiry_date, insert
 from .cron import update_call_time
 
-log_path = os.getenv("LOG_PATH")
-TOKEN = os.getenv('token')
-CHAT_ID = os.getenv('chat_id')
+
+log_path = os.getenv("LOG_PATH") or os.getenv('LOG_PATH')
+TOKEN = os.getenv('token') or os.getenv('token')
+CHAT_ID = os.getenv('chat_id') or os.getenv('chat_id')
 logging.basicConfig(level = logging.INFO, filename = os.path.join(log_path, "logs.log"))
 
 
@@ -25,6 +28,8 @@ def send_message(previous, exp):
 
 
 if __name__ == "__main__":
+	send_message("test", "test")
+	exit(0)
 	conn = create_connection()
 	rows = get_latest_record(conn)
 	if rows:

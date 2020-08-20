@@ -10,7 +10,8 @@ logging.basicConfig(level = logging.INFO, filename = os.path.join(log_path, "log
 def create_connection():
 	conn = None
 	init = True
-	db_path = os.path.join(os.path.dirname(os.path.dirname((os.path.abspath(__file__)))), "db.sqlite3")
+	# db_path = os.path.join(os.path.dirname(os.path.dirname((os.path.abspath(__file__)))), "db.sqlite3")
+	db_path = os.path.join(os.path.dirname((os.path.abspath(__file__))), "db.sqlite3")
 	logging.info(f"Connecting to db at {db_path}")
 	if os.path.exists(db_path):
 		init = False
