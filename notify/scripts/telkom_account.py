@@ -50,39 +50,47 @@ class TelkomAccountManager:
 			'//*[@id="tableAcctContent"]/tbody/tr[5]/td[2]/input').get_property('value')
 		return {'airtime': airtime_bal, 'data': data_balance}
 
-	def check_balances(self, balance_data):
+	@staticmethod
+	def parse_balances(balance_data):
 		"""
-		Checks the data and airtime balance and performs necessary actions
+		Parses the text balance information into integers
+		:param balance_data: The scraped textual information about the current balance
+		:type balance_data: dict
+		:return: Parsed balance information
+		:rtype: dict
 		"""
-
 		airtime, data = balance_data.get('airtime').lower(), balance_data.get('data').lower()
 		data = int(float(data.replace('mb', '')))
 		airtime = int(float((airtime.replace('ksh', ''))))
+		return {'data': data, 'airtime': airtime}
+
+	@staticmethod
+	def check_balances(parsed_data):
+		"""
+		Checks the data and airtime balance and performs necessary actions
+		"""
+		data, airtime = parsed_data.get('data'), parsed_data.get('airtime')
+		balance_info = f'Current data balance is: {data}MB and current airtime balance is KES{airtime}.'
 		if data >= 1500:
 			# send notification directing user to buy 700MB
-			pass
+			instructions = 'You should manually initiate 700MB bundle purchase of KES60.'
 		elif data < 1500 and airtime >= 100:
 			# Proceed to automatically reload 2GB bundle
-			pass
+			instructions = 'You should manually initiate 2GB bundle purchase of KES100.'
 		else:
 			# Notification with instructions to buy airtime
-			pass
+			instructions = 'Low airtime balance. Recharge your account and initiate bundle purchase.'
+		return f'{instructions}\n{balance_info}'
 
 	def run(self):
 		try:
 			self.login()
-			WebDriverWait(account.driver, 10).until(
+			WebDriverWait(self.driver, 10).until(
 				EC.presence_of_element_located((By.ID, 'txtCurrBal'))
 			)
-			balance = self.get_balances()
+			balance = self.parse_balances(self.get_balances())
 			return balance
 		except Exception as ex:
 			logging.exception(f'An error occurred while opening telkom account: {str(ex)}')
 			# account.driver.quit()
 			raise ex
-
-
-if __name__ == '__main__':
-	account = TelkomAccountManager()
-	# account.run()
-	account.check_balances({'airtime': '69.03ksh', 'data': '3145.88MB'})
