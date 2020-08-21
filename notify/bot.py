@@ -156,7 +156,7 @@ class TelegramBot(BotHandler, Bottle):
 			res += f"\nNotification time is set to: {notification_time}"
 		else:
 			res = f"No purchase date was found.\nFollow commands at /options to set a new one."
-		res += f'\n{balances}'
+		res += f"\nAirtime balance is: KES{balances.get('airtime')}. Bundle balance is: {balances.get('data')}MB."
 		self.send_message({"chat_id": chat_id, "text": res})
 		conn.close()
 
