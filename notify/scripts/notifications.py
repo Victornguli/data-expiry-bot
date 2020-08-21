@@ -14,8 +14,8 @@ from .telkom_account import TelkomAccountManager
 
 
 log_path = os.getenv("LOG_PATH") or os.getenv('LOG_PATH')
-TOKEN = os.getenv('token') or os.getenv('token')
-CHAT_ID = os.getenv('chat_id') or os.getenv('chat_id')
+TOKEN = os.getenv('token') or os.getenv('TOKEN')
+CHAT_ID = os.getenv('chat_id') or os.getenv('CHAT_ID')
 logging.basicConfig(level = logging.INFO, filename = os.path.join(log_path, "logs.log"))
 
 
