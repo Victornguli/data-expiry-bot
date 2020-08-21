@@ -29,7 +29,6 @@ def send_message(text):
 if __name__ == "__main__":
 	# send_message("test")
 	# exit(0)
-	exit(0)
 	conn = create_connection()
 	rows = get_latest_record(conn)
 	if rows:
