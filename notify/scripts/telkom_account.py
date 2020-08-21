@@ -1,6 +1,5 @@
 import logging
 import os
-import time
 from pyvirtualdisplay import Display
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -16,9 +15,8 @@ MAX_RETRIES = 3
 log_path = os.getenv("LOG_PATH")
 logging.basicConfig(level = logging.INFO, filename = os.path.join(log_path, "logs.log"))
 
-
-# display = Display(visible = 0, size = (800, 600))
-# display.start()
+display = Display(visible = 0, size = (800, 600))
+display.start()
 
 
 class TelkomAccountManager:
