@@ -5,11 +5,10 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 
 # Load env since this is run outside wsgi environment
-root = os.path.dirname(os.path.abspath(__file__))
-load_dotenv(os.path.join(os.path.dirname(root), ".env"))
+load_dotenv(find_dotenv())
 
 MAX_RETRIES = 3
 log_path = os.getenv("LOG_PATH")
