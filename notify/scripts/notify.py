@@ -7,8 +7,8 @@ from dotenv import load_dotenv
 # Load env since this is run outside wsgi environment
 root = os.path.dirname(os.path.abspath(__file__))
 load_dotenv(os.path.join(os.path.dirname(root), ".env"))
-#from notify.db import create_connection, get_latest_record, calculate_expiry_date, insert
-#from .cron import update_call_time
+# from notify.db import create_connection, get_latest_record, calculate_expiry_date, insert
+# from .cron import update_call_time
 from notify.db import create_connection, get_latest_record, calculate_expiry_date, insert
 from .cron import update_call_time
 
