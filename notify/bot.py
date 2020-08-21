@@ -8,6 +8,7 @@ from bottle import Bottle, request as bottle_request, response
 # from notify.scripts.cron import update_call_time
 from .db import create_connection, insert, get_status
 from .scripts.cron import update_call_time, get_call_details
+from .scripts.telkom_account import TelkomAccountManager
 
 
 BOT_TOKEN = os.getenv('token')
@@ -147,11 +148,15 @@ class TelegramBot(BotHandler, Bottle):
 		now = datetime.now()
 		notification_time = datetime.strptime(f"{call_time['hour']}:{call_time['minute']}", "%H:%M")
 		notification_time = notification_time.strftime("%H:%M")
+		account = TelkomAccountManager()
+		balances = account.run()
+		account.driver.quit()
 		if status[0]:
 			res = f"Previous purchase date is: {previous_date}.\nNotifications are turned {notification_status}."
 			res += f"\nNotification time is set to: {notification_time}"
 		else:
 			res = f"No purchase date was found.\nFollow commands at /options to set a new one."
+		res += f'\n{balances}'
 		self.send_message({"chat_id": chat_id, "text": res})
 		conn.close()
 
