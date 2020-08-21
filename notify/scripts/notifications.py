@@ -9,8 +9,8 @@ root = os.path.dirname(os.path.abspath(__file__))
 load_dotenv(os.path.join(os.path.dirname(root), ".env"))
 
 from notify.db import create_connection, get_latest_record, calculate_expiry_date, insert
-from .cron import update_call_time
-from .telkom_account import TelkomAccountManager
+from notify.scripts.cron import update_call_time
+from notify.scripts.telkom_account import TelkomAccountManager
 
 
 log_path = os.getenv("LOG_PATH") or os.getenv('LOG_PATH')
