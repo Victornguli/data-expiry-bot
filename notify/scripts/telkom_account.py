@@ -31,7 +31,7 @@ class TelkomAccountManager:
 
 		options = webdriver.ChromeOptions()
 		options.add_argument('--no-sandbox')
-		self.driver = webdriver.Chrome('D://Dev tools//chromedriver.exe', options = options)
+		self.driver = webdriver.Chrome(os.getenv('CHROMEDRIVER_PATH'), options = options)
 
 	def login(self):
 		self.driver.get(self.login_url)
