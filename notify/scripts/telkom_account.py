@@ -118,11 +118,14 @@ class TelkomAccountManager:
 		# 	EC.presence_of_element_located((By.XPATH, '// *[ @ id = "supPricePlan"] / tbody / tr[7] / td[5] / span'))
 		# )
 		package.click()
-		self.driver.implicitly_wait(2)
 		confirm_button = WebDriverWait(self.driver, 10).until(
 			EC.presence_of_element_located((By.XPATH, '//*[@id="btnOk"]'))
 		)
 		confirm_button.click()
+		WebDriverWait(self.driver, 10).until(
+			EC.presence_of_element_located((By.ID, '_divSysMsg'))
+		)
+		self.driver.implicitly_wait(2)
 		self.driver.get(self.INDEX_URL)
 		self.current_page = 'index'
 		WebDriverWait(self.driver, 10).until(
@@ -152,3 +155,14 @@ class TelkomAccountManager:
 		except Exception as ex:
 			logging.exception(f'account run Exception: {str(ex)}')
 			self.driver.quit()
+
+
+# if __name__ == '__main__':
+# 	from datetime import datetime
+# 	from notify.db import create_connection, insert, get_status
+# 	conn = create_connection()
+# 	insert(conn, purchase_date = datetime.strptime('2020-08-21 23:00:00', "%Y-%m-%d %H:%M:%S"))
+# 	insert(conn, notifications_on = 1)
+# 	status = get_status(conn)
+# 	print(status[0], status[1])
+# 	conn.close()
