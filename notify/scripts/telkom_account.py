@@ -67,21 +67,11 @@ class TelkomAccountManager:
 		airtime_bal = self.driver.find_element_by_id('txtCurrBal').get_property('value')
 		data_balance = self.driver.find_element_by_xpath(
 			'//*[@id="tableAcctContent"]/tbody/tr[5]/td[2]/input').get_property('value')
-		return {'airtime': airtime_bal, 'data': data_balance}
-
-	@staticmethod
-	def parse_balances(balance_data):
-		"""
-		Parses the text balance information into integers
-		:param balance_data: The scraped textual information about the current balance
-		:type balance_data: dict
-		:return: Parsed balance information
-		:rtype: dict
-		"""
-		airtime, data = balance_data.get('airtime').lower(), balance_data.get('data').lower()
-		data = int(float(data.replace('mb', '')))
-		airtime = int(float((airtime.replace('ksh', ''))))
-		return {'data': data, 'airtime': airtime}
+		airtime, data = airtime_bal.lower(), data_balance.lower()
+		return {
+			'airtime': int(float(data.replace('mb', ''))),
+			'data': int(float((airtime.replace('ksh', ''))))
+		}
 
 	def check_balances(self, parsed_data):
 		"""
@@ -113,14 +103,14 @@ class TelkomAccountManager:
 			EC.presence_of_element_located((By.ID, 'tdSS_MY_BUNDLE'))
 		)
 		purchase_btn.click()
-		# package = WebDriverWait(self.driver, 10).until(
-		# 	EC.presence_of_element_located((By.XPATH, '//*[@id="supPricePlan"]/tbody/tr[2]/td[5]/span'))
-		# )
-		# package.click()
-		# confirm_button = WebDriverWait(self.driver, 10).until(
-		# 	EC.presence_of_element_located((By.XPATH, '//*[@id="btnOk"]'))
-		# )
-		# confirm_button.click()
+		package = WebDriverWait(self.driver, 10).until(
+			EC.presence_of_element_located((By.XPATH, '//*[@id="supPricePlan"]/tbody/tr[2]/td[5]/span'))
+		)
+		package.click()
+		confirm_button = WebDriverWait(self.driver, 10).until(
+			EC.presence_of_element_located((By.XPATH, '//*[@id="btnOk"]'))
+		)
+		confirm_button.click()
 		self.driver.get('')
 		WebDriverWait(self.driver, 10).until(
 			EC.presence_of_element_located((By.ID, 'txtCurrBal'))
@@ -138,7 +128,7 @@ class TelkomAccountManager:
 		try:
 			if not self.logged_in:
 				self.login()
-			balance = self.parse_balances(self.get_balances())
+			balance = self.get_balances()
 			return balance
 		except Exception as ex:
 			logging.exception(f'account run Exception: {str(ex)}')
@@ -162,9 +152,10 @@ class TelkomAccountManager:
 			self.driver.quit()
 
 
-if __name__ == '__main__':
-	from notify.scripts.notifications import send_message
-	account = TelkomAccountManager()
-	bal = account.run()
-	results = account.run_and_check_balance()
-	send_message(bal)
+# if __name__ == '__main__':
+# 	from notify.scripts.notifications import send_message
+# 	account = TelkomAccountManager()
+# 	bal = account.run()
+# 	results = account.run_and_check_balance()
+# 	send_message(bal)
+# 	send_message(results)
