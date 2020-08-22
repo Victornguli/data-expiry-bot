@@ -82,6 +82,7 @@ class TelkomAccountManager:
 		"""
 		data, airtime = parsed_data.get('data'), parsed_data.get('airtime')
 		balance_info = f'Current data balance is: {data}MB and current airtime balance is KES{airtime}.'
+		renewed = False
 		if data >= 1500:
 			# send notification directing user to buy 700MB for now.
 			instructions = 'You should manually initiate 700MB bundle purchase of KES60.'
@@ -93,10 +94,11 @@ class TelkomAccountManager:
 				f"and current airtime balance is KES{renewal.get('airtime')}."
 			)
 			instructions = 'Successfully Renewed 2GB data bundle.'
+			renewed = True
 		else:
 			# Insufficient airtime for auto renewal.
 			instructions = 'Low airtime balance. Recharge your account and initiate bundle purchase.'
-		return f'{instructions}\n{balance_info}'
+		return f'{instructions}\n{balance_info}', renewed
 
 	def purchase_bundle(self):
 		"""
