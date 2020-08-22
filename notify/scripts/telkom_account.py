@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 from pyvirtualdisplay import Display
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -14,19 +15,25 @@ MAX_RETRIES = 3
 log_path = os.getenv("LOG_PATH")
 logging.basicConfig(level = logging.INFO, filename = os.path.join(log_path, "logs.log"))
 
-display = Display(visible = 0, size = (800, 600))
-display.start()
+if not sys.platform.startswith('win'):
+	# On the linux server this is needed for wrapping around X virtual framebuffer(Xvfb)
+	display = Display(visible = 0, size = (800, 600))
+	display.start()
 
 
 class TelkomAccountManager:
 	"""Telkom mobile account manager class"""
+	HOME_URL = 'https://myaccount.telkom.co.ke/3G/index.jsp'
 
 	def __init__(self):
 		self.phone_number = os.getenv('PHONE_NUMBER')
 		self.password = os.getenv('PASSWORD')
 		self.login_url = os.getenv('TELKOM_LOGIN_URL')
+		self.logged_in = False
+		self.current_page = 'login'
 
 		options = webdriver.ChromeOptions()
+		options.headless = True
 		options.add_argument('--no-sandbox')
 		self.driver = webdriver.Chrome(os.getenv('CHROMEDRIVER_PATH'), options = options)
 
@@ -39,9 +46,24 @@ class TelkomAccountManager:
 		password_input = self.driver.find_element_by_id('pwd')
 		phone_input.send_keys(self.phone_number)
 		password_input.send_keys(self.password)
+
+		# Submit login form and wait until logout btn is present to confirm login..
 		form.submit()
+		WebDriverWait(self.driver, 10).until(
+			EC.presence_of_element_located((By.ID, 'userLogoutBtn'))
+		)
+		self.logged_in = True
+		self.current_page = 'index'
 
 	def get_balances(self):
+		"""
+		Scrapes the balances from the logged-in index page
+		:return:
+		:rtype:
+		"""
+		WebDriverWait(self.driver, 10).until(
+			EC.presence_of_element_located((By.ID, 'txtCurrBal'))
+		)
 		airtime_bal = self.driver.find_element_by_id('txtCurrBal').get_property('value')
 		data_balance = self.driver.find_element_by_xpath(
 			'//*[@id="tableAcctContent"]/tbody/tr[5]/td[2]/input').get_property('value')
@@ -61,33 +83,88 @@ class TelkomAccountManager:
 		airtime = int(float((airtime.replace('ksh', ''))))
 		return {'data': data, 'airtime': airtime}
 
-	@staticmethod
-	def check_balances(parsed_data):
+	def check_balances(self, parsed_data):
 		"""
 		Checks the data and airtime balance and performs necessary actions
 		"""
 		data, airtime = parsed_data.get('data'), parsed_data.get('airtime')
 		balance_info = f'Current data balance is: {data}MB and current airtime balance is KES{airtime}.'
 		if data >= 1500:
-			# send notification directing user to buy 700MB
+			# send notification directing user to buy 700MB for now.
 			instructions = 'You should manually initiate 700MB bundle purchase of KES60.'
 		elif data < 1500 and airtime >= 100:
-			# Proceed to automatically reload 2GB bundle
-			instructions = 'You should manually initiate 2GB bundle purchase of KES100.'
+			renewal = self.purchase_bundle()
+			balance_info = (
+				f"Current data balance is: {renewal.get('data')}MB \
+				and current airtime balance is KES{renewal.get('airtime')}.")
+			instructions = 'Successfully Renewed 2GB data bundle.'
 		else:
-			# Notification with instructions to buy airtime
+			# Insufficient airtime for auto renewal.
 			instructions = 'Low airtime balance. Recharge your account and initiate bundle purchase.'
 		return f'{instructions}\n{balance_info}'
 
+	def purchase_bundle(self):
+		"""
+		Purchase a given data package. Currently fixed for the 2GB package
+		:return:
+		:rtype:
+		"""
+		purchase_btn = WebDriverWait(self.driver, 10).until(
+			EC.presence_of_element_located((By.ID, 'tdSS_MY_BUNDLE'))
+		)
+		purchase_btn.click()
+		# package = WebDriverWait(self.driver, 10).until(
+		# 	EC.presence_of_element_located((By.XPATH, '//*[@id="supPricePlan"]/tbody/tr[2]/td[5]/span'))
+		# )
+		# package.click()
+		# confirm_button = WebDriverWait(self.driver, 10).until(
+		# 	EC.presence_of_element_located((By.XPATH, '//*[@id="btnOk"]'))
+		# )
+		# confirm_button.click()
+		self.driver.get('')
+		WebDriverWait(self.driver, 10).until(
+			EC.presence_of_element_located((By.ID, 'txtCurrBal'))
+		)
+		balance = self.get_balances()
+		return balance
+
 	def run(self):
+		"""
+		Retrieves the balance only. Works by first confirming login and homepage status
+		before scraping the balance and returning it.
+		:return: The scraped balance
+		:rtype: dict
+		"""
 		try:
-			self.login()
-			WebDriverWait(self.driver, 10).until(
-				EC.presence_of_element_located((By.ID, 'txtCurrBal'))
-			)
+			if not self.logged_in:
+				self.login()
 			balance = self.parse_balances(self.get_balances())
 			return balance
 		except Exception as ex:
-			logging.exception(f'An error occurred while opening telkom account: {str(ex)}')
-			# account.driver.quit()
-			raise ex
+			logging.exception(f'account run Exception: {str(ex)}')
+			self.driver.quit()
+
+	def run_and_check_balance(self):
+		"""
+		Retrieves balance and checks then balance for further actions, e.g auto renewal
+		:return: Information regarding the balance actions, e.g confirmation of auto-renewal
+		or instructions to manually purchase another package
+		:rtype: str
+		"""
+		try:
+			if not self.logged_in:
+				self.login()
+			balance = self.get_balances()
+			res = self.check_balances(balance)
+			return res
+		except Exception as ex:
+			logging.exception(f'account run_and_check_balance Exception: {str(ex)}')
+			self.driver.quit()
+
+
+if __name__ == '__main__':
+	from notify.scripts.notifications import send_message
+	account = TelkomAccountManager()
+	bal = account.run()
+	results = account.run_and_check_balance()
+	send_message(bal)
