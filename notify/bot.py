@@ -46,7 +46,7 @@ class TelegramBot(BotHandler, Bottle):
 	@staticmethod
 	def hello_world():
 		response.content_type = 'text/html; charset=UTF8'
-		return u"<h1>Hello, World</h1>"
+		return u"<h1>Hello, there...</h1>"
 
 	def start_command(self, chat_id):
 		json_response = {
@@ -145,14 +145,16 @@ class TelegramBot(BotHandler, Bottle):
 		previous_date = f"{status[0]}" if status[0] else "N/A"
 		notification_status = "ON" if status[1] else "OFF"
 		call_time = get_call_details()
-		now = datetime.now()
 		notification_time = datetime.strptime(f"{call_time['hour']}:{call_time['minute']}", "%H:%M")
 		notification_time = notification_time.strftime("%H:%M")
+
+		# Get account balances..
 		account = TelkomAccountManager()
 		balances = account.run()
 		account.driver.quit()
+
 		if status[0]:
-			res = f"Previous purchase date is: {previous_date}.\nNotifications are turned {notification_status}."
+			res = f"Previous purchase date was: {previous_date}.\nNotifications are turned {notification_status}."
 			res += f"\nNotification time is set to: {notification_time}"
 		else:
 			res = f"No purchase date was found.\nFollow commands at /options to set a new one."
@@ -223,4 +225,3 @@ Application is exported to enable it to run on a mod_wsgi server instead.
 
 def app():
 	return TelegramBot()
-

@@ -41,16 +41,15 @@ if __name__ == "__main__":
 		if not(divmod(diff.total_seconds(), 3600)[0] < (24 - (entry[3]))):
 			insert(conn, purchase_date = expiry)
 			if notifications_status:
+				# Check account balance for extra steps and instructions
 				account = TelkomAccountManager()
-				balances = account.run()
-				results = account.check_balances(balances)
+				res = account.run(check_balance = True)
 				account.driver.quit()
 				message = (
-					f"Your data bundle will be expiring soon.\n Previous purchase date was {previous_date}.\nNext\
-					expiry date is {expiry}\n"
+					f"Previous purchase date was {previous_date}.\nNext expiry date is {expiry}\n"
 				)
-				message += results
-				send_message(message)
+				res += message
+				send_message(res)
 		try:
 			hour = expiry.hour
 			minute = expiry.minute
