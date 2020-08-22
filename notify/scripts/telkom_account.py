@@ -33,7 +33,7 @@ class TelkomAccountManager:
 		self.current_page = 'login'
 
 		options = webdriver.ChromeOptions()
-		options.headless = True
+		# options.headless = True
 		options.add_argument('--no-sandbox')
 		self.driver = webdriver.Chrome(os.getenv('CHROMEDRIVER_PATH'), options = options)
 
