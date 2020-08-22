@@ -1,7 +1,7 @@
 import logging
 import os
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 from dotenv import load_dotenv
 
 # Load env since this is run outside wsgi environment
@@ -43,12 +43,16 @@ if __name__ == "__main__":
 			if notifications_status:
 				# Check account balance for extra steps and instructions
 				account = TelkomAccountManager()
-				res = account.run(check_balance = True)
+				res, renewed = account.run(check_balance = True)
 				account.driver.quit()
-				message = (
-					f"Previous purchase date was {previous_date}.\nNext expiry date is {expiry}\n"
-				)
-				res += message
+				if not renewed:
+					res += (
+						f"\nPrevious purchase date was {previous_date} and will expire on {expiry}\n"
+					)
+				else:
+					res += (
+						f"\nData bundle will expire on: {expiry + timedelta(days = 1)}"
+					)
 				send_message(res)
 		try:
 			hour = expiry.hour
