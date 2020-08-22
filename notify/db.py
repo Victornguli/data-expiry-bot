@@ -80,8 +80,7 @@ def get_status(conn):
 	return None, 0
 
 
-def calculate_expiry_date(latest_date, hours = 0, minutes = 0):
-	previous_date = datetime.strptime(latest_date, "%Y-%m-%d %H:%M:%S")
+def calculate_expiry_date(previous_date, hours = 0, minutes = 0):
 	expiry_date = previous_date + timedelta(hours = 24) - timedelta(hours = hours, minutes = minutes)
 	return expiry_date
 
