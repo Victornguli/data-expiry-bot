@@ -16,14 +16,14 @@ log_path = os.getenv("LOG_PATH")
 logging.basicConfig(level = logging.INFO, filename = os.path.join(log_path, "logs.log"))
 
 if not sys.platform.startswith('win'):
-	# On the linux server this is needed for wrapping around X virtual framebuffer(Xvfb)
+	# On a linux server this is needed for wrapping around X virtual framebuffer(Xvfb)
 	display = Display(visible = 0, size = (800, 600))
 	display.start()
 
 
 class TelkomAccountManager:
 	"""Telkom mobile account manager class"""
-	HOME_URL = 'https://myaccount.telkom.co.ke/3G/index.jsp'
+	INDEX_URL = 'https://myaccount.telkom.co.ke/3G/index.jsp'
 
 	def __init__(self):
 		self.phone_number = os.getenv('PHONE_NUMBER')
@@ -57,10 +57,13 @@ class TelkomAccountManager:
 
 	def get_balances(self):
 		"""
-		Scrapes the balances from the logged-in index page
-		:return:
-		:rtype:
+		Scrapes the balances from the logged-in user's index page
+		:return: Data and Airtime balance information
+		:rtype: dict
 		"""
+		# Enforce that the driver is currently at the index first.
+		if self.current_page != 'index':
+			self.driver.get(self.INDEX_URL)
 		WebDriverWait(self.driver, 10).until(
 			EC.presence_of_element_located((By.ID, 'txtCurrBal'))
 		)
@@ -69,8 +72,8 @@ class TelkomAccountManager:
 			'//*[@id="tableAcctContent"]/tbody/tr[5]/td[2]/input').get_property('value')
 		airtime, data = airtime_bal.lower(), data_balance.lower()
 		return {
-			'airtime': int(float(airtime.replace('mb', ''))),
-			'data': int(float((data.replace('ksh', ''))))
+			'airtime': int(float(airtime.replace('ksh', ''))),
+			'data': int(float((data.replace('mb', ''))))
 		}
 
 	def check_balances(self, parsed_data):
@@ -83,10 +86,12 @@ class TelkomAccountManager:
 			# send notification directing user to buy 700MB for now.
 			instructions = 'You should manually initiate 700MB bundle purchase of KES60.'
 		elif data < 1500 and airtime >= 100:
+			# Condition for auto-renewal..
 			renewal = self.purchase_bundle()
 			balance_info = (
-				f"Current data balance is: {renewal.get('data')}MB \
-				and current airtime balance is KES{renewal.get('airtime')}.")
+				f"Current data balance is: {renewal.get('data')}MB "
+				f"and current airtime balance is KES{renewal.get('airtime')}."
+			)
 			instructions = 'Successfully Renewed 2GB data bundle.'
 		else:
 			# Insufficient airtime for auto renewal.
@@ -96,8 +101,8 @@ class TelkomAccountManager:
 	def purchase_bundle(self):
 		"""
 		Purchase a given data package. Currently fixed for the 2GB package
-		:return:
-		:rtype:
+		:return: Balance info after purchase
+		:rtype: dict
 		"""
 		purchase_btn = WebDriverWait(self.driver, 10).until(
 			EC.presence_of_element_located((By.ID, 'tdSS_MY_BUNDLE'))
@@ -111,17 +116,21 @@ class TelkomAccountManager:
 			EC.presence_of_element_located((By.XPATH, '//*[@id="btnOk"]'))
 		)
 		confirm_button.click()
-		self.driver.get('')
+		self.driver.get(self.INDEX_URL)
+		self.current_page = 'index'
 		WebDriverWait(self.driver, 10).until(
 			EC.presence_of_element_located((By.ID, 'txtCurrBal'))
 		)
 		balance = self.get_balances()
 		return balance
 
-	def run(self):
+	def run(self, check_balance = False):
 		"""
 		Retrieves the balance only. Works by first confirming login and homepage status
 		before scraping the balance and returning it.
+		:param check_balance: A condition to dictate whether to check balance for
+		extra operations and responses.
+		:type check_balance: bool
 		:return: The scraped balance
 		:rtype: dict
 		"""
@@ -129,24 +138,10 @@ class TelkomAccountManager:
 			if not self.logged_in:
 				self.login()
 			balance = self.get_balances()
-			return balance
-		except Exception as ex:
-			logging.exception(f'account run Exception: {str(ex)}')
-			self.driver.quit()
-
-	def run_and_check_balance(self):
-		"""
-		Retrieves balance and checks then balance for further actions, e.g auto renewal
-		:return: Information regarding the balance actions, e.g confirmation of auto-renewal
-		or instructions to manually purchase another package
-		:rtype: str
-		"""
-		try:
-			if not self.logged_in:
-				self.login()
-			balance = self.get_balances()
+			if not check_balance:
+				return balance
 			res = self.check_balances(balance)
 			return res
 		except Exception as ex:
-			logging.exception(f'account run_and_check_balance Exception: {str(ex)}')
+			logging.exception(f'account run Exception: {str(ex)}')
 			self.driver.quit()
