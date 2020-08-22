@@ -69,8 +69,8 @@ class TelkomAccountManager:
 			'//*[@id="tableAcctContent"]/tbody/tr[5]/td[2]/input').get_property('value')
 		airtime, data = airtime_bal.lower(), data_balance.lower()
 		return {
-			'airtime': int(float(data.replace('mb', ''))),
-			'data': int(float((airtime.replace('ksh', ''))))
+			'airtime': int(float(airtime.replace('mb', ''))),
+			'data': int(float((data.replace('ksh', ''))))
 		}
 
 	def check_balances(self, parsed_data):
@@ -150,12 +150,3 @@ class TelkomAccountManager:
 		except Exception as ex:
 			logging.exception(f'account run_and_check_balance Exception: {str(ex)}')
 			self.driver.quit()
-
-
-# if __name__ == '__main__':
-# 	from notify.scripts.notifications import send_message
-# 	account = TelkomAccountManager()
-# 	bal = account.run()
-# 	results = account.run_and_check_balance()
-# 	send_message(bal)
-# 	send_message(results)
