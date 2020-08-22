@@ -1,3 +1,4 @@
+import time
 import logging
 import os
 import sys
@@ -113,7 +114,11 @@ class TelkomAccountManager:
 		package = WebDriverWait(self.driver, 10).until(
 			EC.presence_of_element_located((By.XPATH, '//*[@id="supPricePlan"]/tbody/tr[2]/td[5]/span'))
 		)
+		# package = WebDriverWait(self.driver, 10).until(
+		# 	EC.presence_of_element_located((By.XPATH, '// *[ @ id = "supPricePlan"] / tbody / tr[7] / td[5] / span'))
+		# )
 		package.click()
+		self.driver.implicitly_wait(2)
 		confirm_button = WebDriverWait(self.driver, 10).until(
 			EC.presence_of_element_located((By.XPATH, '//*[@id="btnOk"]'))
 		)
