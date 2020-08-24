@@ -103,29 +103,34 @@ class TelkomAccountManager:
 
 	def purchase_bundle(self):
 		"""
-		Purchase a given data package. Currently fixed for the 2GB package
+		Purchases a given data package. Currently fixed for the 2GB package
+		Used visibility_of_element_located instead of presence.. to ensure that
+		pop-up buttons are visible before attempting to click them.
 		:return: Balance info after purchase
 		:rtype: dict
 		"""
-		purchase_btn = WebDriverWait(self.driver, 10).until(
-			EC.presence_of_element_located((By.ID, 'tdSS_MY_BUNDLE'))
+		wait = WebDriverWait(self.driver, 10)
+		purchase_btn = wait.until(
+			EC.visibility_of_element_located((By.ID, 'tdSS_MY_BUNDLE'))
 		)
 		purchase_btn.click()
-		package = WebDriverWait(self.driver, 10).until(
-			EC.presence_of_element_located((By.XPATH, '//*[@id="supPricePlan"]/tbody/tr[2]/td[5]/span'))
+		package = wait.until(
+			EC.visibility_of_element_located((By.XPATH, '//*[@id="supPricePlan"]/tbody/tr[2]/td[5]/span'))
 		)
 		# package = WebDriverWait(self.driver, 10).until(
-		# 	EC.presence_of_element_located((By.XPATH, '// *[ @ id = "supPricePlan"] / tbody / tr[7] / td[5] / span'))
+		# 	EC.visibility_of_element_located((By.XPATH, '// *[ @ id = "supPricePlan"] / tbody / tr[7] / td[5] / span'))
 		# )
 		package.click()
-		confirm_button = WebDriverWait(self.driver, 10).until(
-			EC.presence_of_element_located((By.XPATH, '//*[@id="btnOk"]'))
+		confirm_button = wait.until(
+			EC.visibility_of_element_located((By.XPATH, '//*[@id="btnOk"]'))
 		)
+		# confirm_button popup
 		confirm_button.click()
-		WebDriverWait(self.driver, 10).until(
-			EC.presence_of_element_located((By.ID, '_divSysMsg'))
+		wait.until(
+			EC.visibility_of_element_located((By.ID, '_divSysMsg'))
 		)
-		self.driver.implicitly_wait(5)
+
+		# Navigate back to index page.
 		self.driver.get(self.INDEX_URL)
 		self.current_page = 'index'
 		WebDriverWait(self.driver, 10).until(
