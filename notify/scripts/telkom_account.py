@@ -125,7 +125,7 @@ class TelkomAccountManager:
 		WebDriverWait(self.driver, 10).until(
 			EC.presence_of_element_located((By.ID, '_divSysMsg'))
 		)
-		self.driver.implicitly_wait(2)
+		self.driver.implicitly_wait(5)
 		self.driver.get(self.INDEX_URL)
 		self.current_page = 'index'
 		WebDriverWait(self.driver, 10).until(
