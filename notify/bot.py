@@ -184,7 +184,7 @@ class TelegramBot(BotHandler, Bottle):
 		message = ''
 		data = {"chat_id": chat_id}
 		account = TelkomAccountManager()
-		balance = account.get_balances()
+		balance = account.run()
 		if balance.get('airtime') < 100:
 			message += (
 				f"Insufficient airtime. Recharge and retry."
