@@ -177,6 +177,28 @@ class TelegramBot(BotHandler, Bottle):
 		self.settings_command(chat_id, text = "Use options in main menu for more commands")
 		conn.close()
 
+	def purchase_data(self, chat_id):
+		"""
+		Handles purchase data command. Fixed for 2GB package currently
+		"""
+		account = TelkomAccountManager()
+		balance = account.get_balances()
+		message = ''
+		data = {"chat_id": chat_id}
+		if balance.get('airtime') < 100:
+			message += (
+				f"Insufficient airtime. Recharge and retry."
+				f"Current airtime balance is: {balance.get('airtime')}")
+		else:
+			new_balance = account.purchase_bundle()
+			message += (
+				f"Bundle purchase successful. \nNew Data balance: {new_balance.get('data')}"
+				f"\nNew Airtime balance: {new_balance.get('airtime')}"
+			)
+		account.driver.quit()
+		data['text'] = message
+		self.send_message(data)
+
 	def post_handler(self):
 		data = bottle_request.json
 		print(data)
