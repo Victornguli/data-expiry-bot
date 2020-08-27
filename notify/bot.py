@@ -59,11 +59,11 @@ class TelegramBot(BotHandler, Bottle):
 	def settings_command(self, chat_id, text = "Use the following commands to interact with me"):
 		conn = create_connection()
 		status = get_status(conn)
-		notifications = "turnoff" if status[1] else "turnon"
+		notification_action = "turnoff" if status[1] else "turnon"
 		reply_keyboard_markup = {
 			"keyboard": [
-				["set purchase date"], [f"{notifications} notifications"], ["/status"],
-				["set notification time"]],
+				["set purchase date"], [f"{notification_action} notifications"], ["/status"],
+				["set notification time"], ["/purchase_data"]],
 			"one_time_keyboard": True
 		}
 		url = f"{self.BOT_URL}sendMessage"
@@ -181,10 +181,10 @@ class TelegramBot(BotHandler, Bottle):
 		"""
 		Handles purchase data command. Fixed for 2GB package currently
 		"""
-		account = TelkomAccountManager()
-		balance = account.get_balances()
 		message = ''
 		data = {"chat_id": chat_id}
+		account = TelkomAccountManager()
+		balance = account.get_balances()
 		if balance.get('airtime') < 100:
 			message += (
 				f"Insufficient airtime. Recharge and retry."
@@ -212,6 +212,8 @@ class TelegramBot(BotHandler, Bottle):
 				self.settings_command(chat_id)
 			elif command == "/status":
 				self.status_command(chat_id)
+			elif command == "/purchase_data":
+				self.purchase_data(chat_id)
 		else:
 			message = data.get("message", {}).get("text", "")
 			if message == "turnoff notifications":
